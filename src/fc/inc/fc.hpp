@@ -45,6 +45,19 @@ struct ControlStates {
     Vec3 I; // current moment of inertia
     double z_cm; // CoM estimate
 
+    // total mass estimate of the remaining rocket
+    double mass = 0.0;
+    // accelerometer reading in the body frame (used for burnout detection)
+    Vec3 a_body{};
+    // gyro offset learned while sitting on the pad
+    Vec3 gyro_bias{};
+    // running total of pad gyro readings
+    Vec3 gyro_bias_sum{};
+    // how many readings are in that total
+    int gyro_bias_samples = 0;
+    // how long the accelerometer has read near zero (burnout detector)
+    double low_accel_time = 0.0;
+
     int active_stage = 0; // index of the stage on the bottom
     int lit_stage = -1; // stage whose engine is burning, -1 if none
     double throttle = 0.0; // fraction of a full step the lit engine burns on the next step
@@ -89,6 +102,13 @@ class FlightController {
     static constexpr double HOLD_DURATION = 10.0;
     static constexpr double MAX_Q_ALPHA = 1000.0;
 
+    // true = hold the rocket vertical (TVC demonstrator), false = original fly-to-target behavior
+    static constexpr bool VERTICAL_HOLD_MODE = true;
+    // motor counts as burned out when the nose-axis accelerometer stays below this
+    static constexpr double BURNOUT_ACCEL = 1.0;
+    // seconds it has to stay below that before we believe it
+    static constexpr double BURNOUT_CONFIRM_TIME = 0.2;
+
     // rocket geometry handed over by the sim once at startup
     fc_vehicle veh;
 
@@ -105,6 +125,7 @@ class FlightController {
     void pull_new_data(const fc_sensors& sensors);
     Quat quat_from_vec(Vec3 u);
     Vec3 limit_aoa(Vec3 dir) const;
+    Vec3 tilt_error_body(Vec3 want_eci) const; //AI added code
     Quat set_new_engine_gimbal_quat();
     Vec3 calculate_rcs_moments_to_achieve_target_orientation(); // longest function name ever lets go
     void calculate_I();

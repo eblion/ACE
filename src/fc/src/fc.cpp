@@ -126,13 +126,34 @@ void FlightController::pull_new_data(const fc_sensors& sensors) {
     cs.g = fc_gravity_j2(cs.r);
     cs.a_inertial = fc_q_rotate(cs.att, sensors.a_spec); // body -> ECI
     cs.a = cs.a_inertial + cs.g;
-    cs.w = sensors.w;
+     
+    // keep the raw accelerometer reading for burnout detection
+    cs.a_body = sensors.a_spec;
+
+    // while armed on the pad, average the gyro to learn its bias
+    if (VERTICAL_HOLD_MODE && cs.stage == ARMED) {
+        cs.gyro_bias_sum = cs.gyro_bias_sum + sensors.w;
+        cs.gyro_bias_samples++;
+        cs.gyro_bias = cs.gyro_bias_sum / cs.gyro_bias_samples;
+    }
+
+    // gyro with the learned bias removed
+    
+    cs.w = sensors.w - cs.gyro_bias;
     cs.dt = sensors.dt;
     cs.time = sensors.t;
 }
 
 // estimate state of the rocket in flight at the current moment
 void FlightController::estimate_state() {
+        // on the pad in vertical hold mode: stay put instead of integrating sensor noise
+    if (VERTICAL_HOLD_MODE && cs.stage == ARMED) {
+        cs.att = cs.is.q_origin;
+        cs.r = cs.is.r_origin;
+        cs.v = surface_velocity_eci(cs.is.r_origin);
+        return;
+    }
+    
     // position and velocity 
 
     // acceleration is assumed to have been determined before this by reading from the INS
@@ -196,7 +217,24 @@ Vec3 FlightController::limit_aoa(Vec3 dir) const {
     if (perp.mag() < 1e-9) return v_hat;
     return v_hat * cos(aoa_max) + perp.unit() * sin(aoa_max);
 }
+// pointing error that ignores roll: how far the nose (body +z) is from the wanted direction, in body axes (NEW AI FUNCTION TEST PROPERLY)
+Vec3 FlightController::tilt_error_body(Vec3 want_eci) const {
+    // where the nose points right now, in ECI
+    Vec3 nose = fc_q_rotate(cs.att, Vec3{0, 0, 1});
 
+    // axis that swings the nose onto the wanted direction (its length is sin of the angle)
+    Vec3 axis = nose.cross(want_eci.unit());
+    double s = axis.mag();
+
+    // no tilt error (or exactly upside down, where the axis is undefined)
+    if (s < 1e-9) return Vec3{0, 0, 0};
+
+    // real angle between them, so it still works past 90 degrees
+    double angle = atan2(s, nose.dot(want_eci.unit()));
+
+    // rotate the axis from ECI into body axes so x = pitch error, y = yaw error
+    return fc_q_rotate(cs.att.inverse(), axis * (angle / s));
+}
 // sets the engine gimbal based on target orientation
 Quat FlightController::set_new_engine_gimbal_quat() {
     if (cs.stage < STAGE_1 || cs.stage == FREE_FLIGHT) return {1, 0, 0, 0};

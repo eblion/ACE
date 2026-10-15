@@ -8,6 +8,22 @@
 constexpr double NOMINAL_TOF = 1500.0; // seconds
 
 void FlightController::s1_powered() {
+    // demonstrator mode: hold vertical, then coast once the motor has burned out (FULL AI IF STATEMENT)
+    if (VERTICAL_HOLD_MODE) {
+        // keep pointing at the launch-pad "up" direction
+        cs.target_att = cs.is.q_origin;
+
+        // ignore the first second so the motor ramping up isn't mistaken for burnout
+        if (cs.time - cs.stage_burn_time_start > 1.0) {
+            // add up how long the nose-axis accelerometer has read near zero (thrust gone)
+            if (cs.a_body.z < BURNOUT_ACCEL) cs.low_accel_time += cs.dt;
+            else cs.low_accel_time = 0.0;
+
+            // confirmed burnout: stop controlling and coast (single stage, so skip STAGE_2)
+            if (cs.low_accel_time > BURNOUT_CONFIRM_TIME) cs.stage = FREE_FLIGHT;
+        }
+        return;
+    }
     double dt = cs.time - cs.stage_burn_time_start;
 
     // aim at where the target will roughly be at arrival
@@ -328,6 +344,7 @@ void FlightController::payload_deploy() {
 }
 
 void FlightController::free_flight() {
+    if (VERTICAL_HOLD_MODE) return;
     // determine altitude relative to target
     Vec3 target_eci = target_eci_at_time_of_arrival(cs.time);
     double dist = (cs.r - target_eci).mag();
