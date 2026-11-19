@@ -4,7 +4,7 @@
 #include "sim/inc/rocket.hpp"
 #include "sim_constants.hpp"
 #include "planetary_constants.hpp"
-#include "fc/inc/fc_api.h"
+#include "flight-controller/sub-o-example/inc/fc_api.h"
 #include <cmath>
 #include <algorithm>
 #include <filesystem>

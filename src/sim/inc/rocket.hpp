@@ -7,7 +7,7 @@
 #include "sim/inc/ins.hpp"
 #include "sim/inc/data_export.hpp"
 #include "sim/inc/ephemeris.hpp"
-#include "fc/inc/fc_sim_connector.hpp"
+#include "flight-controller/sub-o-example/inc/fc_sim_connector.hpp"
 #include <algorithm>
 #include <array>
 #include <memory>
@@ -230,6 +230,7 @@ class Rocket {
     void rcs_on() { rcs_active = true; } // enable or disable rcs orientation correction
     void rcs_off() { rcs_active = false; }
     void activate_detonation() { exploded = true; }
+    void set_flight_controller(const fc_sim_connector::Api& api) { fc_api = api; }
 
     // rocket owns the flight controller state
     Rocket(Rocket&&) = default;
@@ -246,6 +247,7 @@ class Rocket {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // the dropped in flight controller
     INS ins;
+    fc_sim_connector::Api fc_api; // fc entry point to call
     fc_sim_connector::State fc; // state fc_init
     fc_commands fc_cmd{}; // what it asked for on the current step
 

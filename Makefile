@@ -5,19 +5,26 @@ CFLAGS   := -std=c11 -Wall -Wpedantic -Isrc -O3 -ffp-contract=off
 
 # --- flight controller (swap this out to test your own) ---
 # whatever you point FC_SRC at must implement fc_init / fc_update / fc_free from
-# src/fc/inc/fc_api.h. .c and .cpp both work, and it can be more than one file:
+# src/flight-controller/sub-o-example/inc/fc_api.h. .c and .cpp both work, and it can be more than one file:
 #
-#     make FC_SRC=src/fc/src/example_fc.c
-#     make FC_SRC="src/fc/src/my_nav.cpp src/fc/src/my_guidance.cpp"
-FC_SRC := src/fc/src/fc.cpp src/fc/src/stages.cpp
+#     make FC_SRC=src/flight-controller/my_fc/my_fc.c
+#     make FC_SRC="src/flight-controller/my_fc/my_nav.cpp src/flight-controller/my_fc/my_guidance.cpp"
+FC_SRC := src/flight-controller/sub-o-example/src/fc.cpp src/flight-controller/sub-o-example/src/stages.cpp
 
 FC_C_SRCS   := $(filter %.c,$(FC_SRC))
 FC_CXX_SRCS := $(filter-out %.c,$(FC_SRC))
-FC_C_OBJS   := $(addprefix build/fc/,$(notdir $(FC_C_SRCS:.c=.o)))
+FC_C_OBJS   := $(addprefix build/flight-controller/,$(FC_C_SRCS:.c=.o))
+
+# --- per rocket flight controllers ---
+# builds FC_SRC into a shared library that a rocket picks with `fc: <path>` in rocket.yaml:
+#
+#     make fc-lib FC_SRC=src/flight-controller/my_fc/my_fc.c FC_LIB=build/flight-controller/my_fc.so
+FC_LIB      := build/flight-controller/sub-o-example.so
+FC_PIC_OBJS := $(addprefix build/flight-controller/pic/,$(FC_C_SRCS:.c=.o))
 
 SIM_SRCS    := src/main.cpp \
                src/sim/src/sim.cpp src/sim/src/rocket.cpp src/sim/src/control.cpp src/sim/src/drag.cpp src/sim/src/propulsion.cpp src/sim/src/gravitation.cpp src/sim/src/atmosphere.cpp src/sim/src/ephemeris.cpp src/sim/src/dop853.cpp \
-               src/sim/src/config.cpp src/sim/src/data_export.cpp src/fc/src/fc_api.cpp \
+               src/sim/src/config.cpp src/sim/src/data_export.cpp src/flight-controller/sub-o-example/src/fc_api.cpp \
                $(FC_CXX_SRCS)
 
 COMMON_SRCS := $(SIM_SRCS) src/renderer/renderer.cpp src/renderer/geometry.cpp src/renderer/terrain_lod.cpp
@@ -29,9 +36,17 @@ rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(
 HEADERS   := $(call rwildcard,src,*.hpp *.h)
 
 # a plain c controller gets compiled on its own and linked in
-build/fc/%.o: src/fc/src/%.c src/fc/inc/fc_api.h
-	@mkdir -p build/fc
+build/flight-controller/%.o: %.c src/flight-controller/sub-o-example/inc/fc_api.h
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+build/flight-controller/pic/%.o: %.c src/flight-controller/sub-o-example/inc/fc_api.h
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -fPIC -c $< -o $@
+
+fc-lib: $(FC_PIC_OBJS)
+	@mkdir -p $(dir $(FC_LIB))
+	$(CXX) $(CXXFLAGS) -fPIC -shared $(FC_LIB_LDFLAGS) $(FC_CXX_SRCS) $(FC_PIC_OBJS) -o $(FC_LIB)
 
 # --- raylib backend (`make`): wireframe, no textures, no bgfx needed ---
 RAYLIB_SRCS := src/renderer/raylib/raylib_backend.cpp src/renderer/raylib/models.cpp \
@@ -84,10 +99,13 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
+        FC_LIB_LDFLAGS := -undefined dynamic_lookup
         LDLIBS       := -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
         BGFX_SYSLIBS := -lglfw -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -framework Metal -framework QuartzCore
     else
         LDLIBS       := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
+        # fc libraries call back into fc_active_stage, export only that so nothing else gets interposed
+        FC_LDFLAGS   := -Wl,--export-dynamic-symbol=fc_active_stage -ldl
         BGFX_SYSLIBS := -lglfw -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
     endif
     SHADERC   := $(BGFX_DIR)/cmake/bgfx/shaderc
@@ -101,7 +119,7 @@ endif
 # raylib (default)
 # ---------------------------------------------------------------------------
 $(TARGET): $(COMMON_SRCS) $(RAYLIB_SRCS) $(FC_C_OBJS) $(HEADERS) | $(EPHEMERIS)
-	$(CXX) $(CXXFLAGS) $(RAYLIB_ARCH) $(COMMON_SRCS) $(RAYLIB_SRCS) $(FC_C_OBJS) -o $@ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(RAYLIB_ARCH) $(COMMON_SRCS) $(RAYLIB_SRCS) $(FC_C_OBJS) -o $@ $(LDLIBS) $(FC_LDFLAGS)
 
 run: $(TARGET)
 	./$(TARGET)
@@ -116,7 +134,7 @@ bgfx: $(BGFX_TARGET)
 
 $(BGFX_TARGET): $(COMMON_SRCS) $(BGFX_SRCS) $(FC_C_OBJS) $(HEADERS) shaders-bgfx | $(EPHEMERIS)
 	$(CXX) $(CXXFLAGS) $(BGFX_ARCH) $(BGFX_DEFS) $(BGFX_INCS) \
-	    $(COMMON_SRCS) $(BGFX_SRCS) $(FC_C_OBJS) -o $@ $(BGFX_LIBS) $(BGFX_SYSLIBS)
+	    $(COMMON_SRCS) $(BGFX_SRCS) $(FC_C_OBJS) -o $@ $(BGFX_LIBS) $(BGFX_SYSLIBS) $(FC_LDFLAGS)
 
 run-bgfx: bgfx
 	./$(BGFX_TARGET)
@@ -127,7 +145,7 @@ run-bgfx: bgfx
 headless: $(HEADLESS_TARGET)
 
 $(HEADLESS_TARGET): $(SIM_SRCS) $(HEADLESS_SRCS) $(FC_C_OBJS) $(HEADERS) | $(EPHEMERIS)
-	$(CXX) $(CXXFLAGS) $(RAYLIB_ARCH) $(HEADLESS_DEFS) $(SIM_SRCS) $(HEADLESS_SRCS) $(FC_C_OBJS) -o $@
+	$(CXX) $(CXXFLAGS) $(RAYLIB_ARCH) $(HEADLESS_DEFS) $(SIM_SRCS) $(HEADLESS_SRCS) $(FC_C_OBJS) -o $@ $(FC_LDFLAGS)
 
 run-headless: headless
 	./$(HEADLESS_TARGET)
@@ -159,6 +177,6 @@ $(EPHEMERIS):
 
 clean:
 	$(RM) $(TARGET) $(BGFX_TARGET) $(HEADLESS_TARGET)
-	$(RM) build/fc/*.o
+	$(RM) $(FC_C_OBJS) $(FC_PIC_OBJS)
 
-.PHONY: run run-bgfx bgfx headless run-headless shaders-bgfx bgfx-deps clean
+.PHONY: fc-lib run run-bgfx bgfx headless run-headless shaders-bgfx bgfx-deps clean

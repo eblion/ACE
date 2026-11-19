@@ -28,6 +28,7 @@ rockets:
     nosecone_length: 3.0
     nosecone_mass: 100.0 # mass of the nosecone/payload on top of the last stage (kg)
     nosecone_com_distance: 2.0 # nosecone CoM back from the nose tip (m), defaults to 2/3 of nosecone_length if omitted
+    fc: build/flight-controller/sub-o-example.so # this rocket's own flight controller (make fc-lib)
     no_fc: false # if true, this rocket spawns without a flight controller (no guidance/autopilot)
     # inertia_kg_m2: [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] # ability to import your own instead of using in-sim estimation model 
 
@@ -44,7 +45,7 @@ rockets:
         fuel_length: 6.0 # length of the propellant column with a full tank
         engine_distance: 7.49 # distance from the top of the stage
         gimbal_range_deg: 5.0 # degrees
-        thrust_curve: stage1_thrust_curve.csv # thrust curve file path
+        thrust_curve: ../src/flight-controller/sub-o-example/stage1_thrust_curve.csv # thrust curve file path
 
       - id: 2
         geometry:
@@ -58,7 +59,7 @@ rockets:
         fuel_length: 3.2
         engine_distance: 4.12
         gimbal_range_deg: 5.0
-        thrust_curve: stage2_thrust_curve.csv
+        thrust_curve: ../src/flight-controller/sub-o-example/stage2_thrust_curve.csv
 
       - id: 3
         geometry:
@@ -73,4 +74,4 @@ rockets:
         engine_distance: 6.59
         gimbal_range_deg: 4.0
         rcs_max_moment: [100.0, 100.0, 100.0]
-        thrust_curve: stage3_thrust_curve.csv
+        thrust_curve: ../src/flight-controller/sub-o-example/stage3_thrust_curve.csv

@@ -6,7 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
-#include "fc/inc/fc.hpp"
+#include "flight-controller/sub-o-example/inc/fc.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // entry points                                                                 //

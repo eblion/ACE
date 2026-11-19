@@ -53,7 +53,7 @@ void Rocket::update_flight_controller(double current_time) {
         fc_veh->r_target_ecef         = start_state.target_r_ecef;
         fc_veh->time_step             = consts::TIME_STEP;
 
-        fc.reset(fc_init(fc_veh.get()));
+        fc = fc_sim_connector::State(fc_api.init(fc_veh.get()), {fc_api.free});
         fc_cmd = {};
         fc_cmd.gimbal = {1, 0, 0, 0};
         fc_started = true;
@@ -76,7 +76,7 @@ void Rocket::update_flight_controller(double current_time) {
     fc_cmd.launch_abort = 0;
     fc_cmd.cutoff_fraction = 0.0;
 
-    fc_update(fc.get(), &sensors, &fc_cmd);
+    fc_api.update(fc.get(), &sensors, &fc_cmd);
 
     fc_sim_connector::end();
     apply_fc_commands();

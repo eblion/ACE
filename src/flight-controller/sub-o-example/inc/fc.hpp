@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "fc/inc/fc_api.h"
+#include "flight-controller/sub-o-example/inc/fc_api.h"
 #include <vector>
 
 // the intitial states that the rocket starts at

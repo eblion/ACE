@@ -73,6 +73,7 @@ namespace sim {
             rocket_list.emplace_back(rocket.name, rocket.origin_lat, rocket.origin_lon, rocket.target_lat, rocket.target_lon,
                                      rocket.props, rocket.track_data, rocket.export_interval,
                                      rocket.start_in_orbit, rocket.orbit, rocket.start_in_eci, rocket.eci_position, rocket.eci_velocity, rocket.attitude, rocket.body_rates, moon_gravity, sun_gravity, drag, &ephem, imu);
+            rocket_list.back().set_flight_controller(fc_sim_connector::load(rocket.fc));
         }
 
         // configure the rocket for starting settings

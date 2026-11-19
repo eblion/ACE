@@ -10,6 +10,7 @@ struct RocketEntry {
     std::string name;
     bool track_data = false; // export this rocket's flight data to data/<name>.csv
     double export_interval = 0.0; // sim seconds between exported rows (0 = every step)
+    std::string fc; // flight controller shared library
     double origin_lat = 0.0, origin_lon = 0.0;
     bool start_in_orbit = false; // start from orbit instead of origin_lat/origin_lon
     OrbitElements orbit;

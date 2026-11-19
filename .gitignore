@@ -4,6 +4,7 @@
 *.exe
 *.csv
 !config/**/*.csv
+!src/flight-controller/**/*.csv
 !test/nesc/zero_thrust.csv
 !test/nesc/**/config/*.csv
 test/nesc/**/compare.png

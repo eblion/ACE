@@ -139,7 +139,7 @@ time_s,thrust_N
 61.416,0.0
 ```
 
-The rocket loads each curve into its stage as a `ThrustCurve`, with separate `time` and `thrust` arrays. Csv files under `config/` are tracked by git, everything else ending in `.csv` is ignored.
+The rocket loads each curve into its stage as a `ThrustCurve`, with separate `time` and `thrust` arrays. Csv files under `config/` and `src/flight-controller/` are tracked by git, everything else ending in `.csv` is ignored.
 
 Adding more vehicles is just another list entry as shown:
 
@@ -195,17 +195,34 @@ rockets:
 The FC is selected at build time with `FC_SRC`:
 
 ```sh
-make FC_SRC=src/fc/src/my_fc.c                          # single C file
-make FC_SRC="src/fc/src/my_nav.cpp src/fc/src/my_guid.cpp"  # several files
-make bgfx FC_SRC=src/fc/src/my_fc.c                     # same for the bgfx target
+make FC_SRC=src/flight-controller/my_fc/my_fc.c                  # single C file
+make FC_SRC="src/flight-controller/my_fc/nav.cpp src/flight-controller/my_fc/guid.cpp"  # several files
+make bgfx FC_SRC=src/flight-controller/my_fc/my_fc.c             # same for the bgfx target
 ```
 
-Default is `FC_SRC := src/fc/src/fc.cpp src/fc/src/stages.cpp` (my own epic controller).
+Default is `FC_SRC := src/flight-controller/sub-o-example/src/fc.cpp src/flight-controller/sub-o-example/src/stages.cpp` (my own epic controller).
+
+### FC per rocket
+
+A flight controller's path may be specified as such as to allow multiple different rockets to be compiled with different flight controllers. You may do this via the following configurations, listed as examples:
+
+```sh
+make fc-lib FC_SRC=src/flight-controller/my_fc/my_fc.c FC_LIB=build/flight-controller/my_fc.so
+make fc-lib FC_SRC="src/flight-controller/other_fc/nav.cpp src/flight-controller/other_fc/guid.cpp" FC_LIB=build/flight-controller/other_fc.so
+```
+
+```yaml
+rockets:
+  - name: rocket_1
+    fc: build/flight-controller/my_fc.so # this s relative to the working directory
+  - name: rocket_2
+    fc: build/flight-controller/other_fc.so
+```
 
 Rules you should probably follow:
 
 - Your code must define exactly three things: `fc_init`, `fc_update`, `fc_free`.
-- C++ files are compiled into the main build. **C files are compiled separately**, so a `.c` controller has to live in `src/fc/src/` for `make` to find a rule for it. `.cpp` files can live anywhere.
+- C++ files are compiled into the main build. C files are compiled separately and linked in. Either can live anywhere, `src/flight-controller/<name>/` is the convention.
 - `fc_api.h` is the only header you need. It works from both C and C++ and already carries the vector/quaternion helpers, gravity model, ECI/ECEF conversions, and stage math (`fc_stage_burn_time`, `fc_stage_delta_v`, …). ((please read the API file completely)). You are welcome to interface your own math for internal flight controller operations, but when interfacing with the API it easier to use the API's helpers.
 
 ### The three entry points
@@ -258,7 +275,7 @@ The sim applies the commands after `fc_update` returns, in a fixed order (cutoff
 ### Example
 
 ```c
-#include "fc/inc/fc_api.h"
+#include "flight-controller/sub-o-example/inc/fc_api.h"
 #include <stdlib.h>
 
 struct fc_state { const fc_vehicle* veh; fc_vec3 r, v; fc_quat q; int lit; };
@@ -289,7 +306,7 @@ void fc_update(fc_state* s, const fc_sensors* sen, fc_commands* cmd) {
 void fc_free(fc_state* s) { free(s); }
 ```
 
-Build it with `make FC_SRC=src/fc/src/my_fc.c && ./program`.
+Build it with `make FC_SRC=src/flight-controller/my_fc/my_fc.c && ./program`.
 
 ## AI Disclosure
 All of the simulation code was written and reviewed by humans. However, all renderer and related non-essential code had varying levels of assistance with LLM models. LLM Assistance was used in building configs for NASA NESC test cases, but all inputs and outputs were verified individually by a human.

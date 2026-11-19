@@ -10,9 +10,9 @@
  * this is the only header a flight controller needs to include.
  * 
  * to build with specific flight controller code in mind please run:
- *     make FC_SRC=src/fc/src/fc.c
+ *     make FC_SRC=src/flight-controller/my_fc/fc.c
  *   or if the FC has multiple files (probably)
- *     make FC_SRC="src/fc/src/fc.c src/fc/src/file2.c"
+ *     make FC_SRC="src/flight-controller/my_fc/fc.c src/flight-controller/my_fc/file2.c"
  *
  * the sim calls fc_update once per time step. it hands you the sensors and you fill in the
  * fc_commands struct, which the sim applies after fc_update returns in a fixed order (see below)
