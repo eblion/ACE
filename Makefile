@@ -104,8 +104,8 @@ else
         BGFX_SYSLIBS := -lglfw -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -framework Metal -framework QuartzCore
     else
         LDLIBS       := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
-        # fc libraries call back into fc_active_stage, export only that so nothing else gets interposed
-        FC_LDFLAGS   := -Wl,--export-dynamic-symbol=fc_active_stage -ldl
+        # fc libraries call back into fc_active_stage and fc_debug_*, export only those so nothing else gets interposed
+        FC_LDFLAGS   := -Wl,--export-dynamic-symbol=fc_active_stage -Wl,--export-dynamic-symbol='fc_debug_*' -ldl
         BGFX_SYSLIBS := -lglfw -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
     endif
     SHADERC   := $(BGFX_DIR)/cmake/bgfx/shaderc

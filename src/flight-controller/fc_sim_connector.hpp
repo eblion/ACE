@@ -8,6 +8,7 @@
 #include "flight-controller/fc_api.h"
 #include <memory>
 #include <string>
+#include <vector>
 
 class Rocket;
 
@@ -21,6 +22,9 @@ void begin(Rocket* r);
 
 // kill
 void end();
+
+// every rocket in the sim
+void set_rockets(const std::vector<Rocket>* rockets);
 
 // a flight controller's entry point
 struct Api {

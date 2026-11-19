@@ -76,6 +76,8 @@ namespace sim {
             rocket_list.back().set_flight_controller(fc_sim_connector::load(rocket.fc));
         }
 
+        fc_sim_connector::set_rockets(&rocket_list);
+
         // configure the rocket for starting settings
         publish_sim_states(rocket_list);
 

@@ -12,6 +12,7 @@
 
 namespace {
     Rocket* g_rocket = nullptr;
+    const std::vector<Rocket>* g_rockets = nullptr;
 }
 
 namespace fc_sim_connector {
@@ -22,6 +23,10 @@ void begin(Rocket* r) {
 
 void end() {
     g_rocket = nullptr;
+}
+
+void set_rockets(const std::vector<Rocket>* rockets) {
+    g_rockets = rockets;
 }
 
 Api load(const std::string& path) {
@@ -54,6 +59,25 @@ extern "C" {
 
 int fc_active_stage(void) {
     return g_rocket ? g_rocket->active_stage_idx() : 0;
+}
+
+int fc_debug_get_rocket(const char* name, fc_debug_rocket* out) {
+    if (!g_rockets || !name || !out) return 0;
+    for (const Rocket& r : *g_rockets) {
+        if (r.get_name() != name) continue;
+        RocketState s = r.get_state();
+        out->mass         = s.mass;
+        out->fuel         = s.fuel;
+        out->r            = s.r;
+        out->v            = s.v;
+        out->a            = s.a;
+        out->w            = s.w;
+        out->q            = s.q_rocket;
+        out->active_stage = r.active_stage_idx();
+        out->exploded     = s.detonation_active;
+        return 1;
+    }
+    return 0;
 }
 
 } // extern "C"

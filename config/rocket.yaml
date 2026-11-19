@@ -3,7 +3,7 @@
 # one full entry per rocket
 rockets:
   - name: rocket_1
-    track_data: true # if true, writes this rocket's flight data to data/<name>.csv
+    track_data: false # if true, writes this rocket's flight data to data/<name>.csv
     export_interval: 1.0 # sim seconds between exported rows (0 = every step)
 
     origin_lat: 48.209

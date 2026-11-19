@@ -116,6 +116,29 @@ typedef struct fc_sensors {
  */
 int fc_active_stage(void);
 
+/**
+ * @warning debug feature
+ * a rocket's true state
+ */
+typedef struct fc_debug_rocket {
+    double mass;        /* current total mass (kg) */
+    double fuel;        /* propellant left across all remaining stages (kg) */
+    fc_vec3 r, v, a;    /* ECI */
+    fc_vec3 w;          /* inertial angular velocity, body frame */
+    fc_quat q;          /* body to ECI */
+    int active_stage;
+    int exploded;
+} fc_debug_rocket;
+
+/**
+ * @warning debug feature
+ * true state of a rocket in rocket.yaml. rockets earlier in rocket.yaml have
+ * already been stepped to the next time step when this is called so just be
+ * aware of that because the states might not match up if you order it wrong!!!
+ * @return 1 and fills out if that rocket exists, 0 if not
+ */
+int fc_debug_get_rocket(const char* name, fc_debug_rocket* out);
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // COMMANDS
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
