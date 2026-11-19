@@ -1,7 +1,7 @@
 // Copyright 2026 Tyler Wiggins
 // SPDX-License-Identifier: Apache-2.0
 
-#include "flight-controller/sub-o-example/inc/fc_sim_connector.hpp"
+#include "flight-controller/fc_sim_connector.hpp"
 #include "sim/inc/rocket.hpp"
 #include <cstdlib>
 #include <filesystem>

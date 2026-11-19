@@ -275,7 +275,7 @@ The sim applies the commands after `fc_update` returns, in a fixed order (cutoff
 ### Example
 
 ```c
-#include "flight-controller/sub-o-example/inc/fc_api.h"
+#include "flight-controller/fc_api.h"
 #include <stdlib.h>
 
 struct fc_state { const fc_vehicle* veh; fc_vec3 r, v; fc_quat q; int lit; };

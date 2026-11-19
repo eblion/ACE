@@ -13,7 +13,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "flight-controller/sub-o-example/inc/fc_api.h"
+#include "flight-controller/fc_api.h"
 
 struct event {
     double t;

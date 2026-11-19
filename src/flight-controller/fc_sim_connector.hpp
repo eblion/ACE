@@ -5,7 +5,7 @@
 
 // connects FC with rocket class
 
-#include "flight-controller/sub-o-example/inc/fc_api.h"
+#include "flight-controller/fc_api.h"
 #include <memory>
 #include <string>
 

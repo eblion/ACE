@@ -5,7 +5,7 @@ CFLAGS   := -std=c11 -Wall -Wpedantic -Isrc -O3 -ffp-contract=off
 
 # --- flight controller (swap this out to test your own) ---
 # whatever you point FC_SRC at must implement fc_init / fc_update / fc_free from
-# src/flight-controller/sub-o-example/inc/fc_api.h. .c and .cpp both work, and it can be more than one file:
+# src/flight-controller/fc_api.h. .c and .cpp both work, and it can be more than one file:
 #
 #     make FC_SRC=src/flight-controller/my_fc/my_fc.c
 #     make FC_SRC="src/flight-controller/my_fc/my_nav.cpp src/flight-controller/my_fc/my_guidance.cpp"
@@ -24,7 +24,7 @@ FC_PIC_OBJS := $(addprefix build/flight-controller/pic/,$(FC_C_SRCS:.c=.o))
 
 SIM_SRCS    := src/main.cpp \
                src/sim/src/sim.cpp src/sim/src/rocket.cpp src/sim/src/control.cpp src/sim/src/drag.cpp src/sim/src/propulsion.cpp src/sim/src/gravitation.cpp src/sim/src/atmosphere.cpp src/sim/src/ephemeris.cpp src/sim/src/dop853.cpp \
-               src/sim/src/config.cpp src/sim/src/data_export.cpp src/flight-controller/sub-o-example/src/fc_api.cpp \
+               src/sim/src/config.cpp src/sim/src/data_export.cpp src/flight-controller/fc_api.cpp \
                $(FC_CXX_SRCS)
 
 COMMON_SRCS := $(SIM_SRCS) src/renderer/renderer.cpp src/renderer/geometry.cpp src/renderer/terrain_lod.cpp
@@ -36,11 +36,11 @@ rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(
 HEADERS   := $(call rwildcard,src,*.hpp *.h)
 
 # a plain c controller gets compiled on its own and linked in
-build/flight-controller/%.o: %.c src/flight-controller/sub-o-example/inc/fc_api.h
+build/flight-controller/%.o: %.c src/flight-controller/fc_api.h
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/flight-controller/pic/%.o: %.c src/flight-controller/sub-o-example/inc/fc_api.h
+build/flight-controller/pic/%.o: %.c src/flight-controller/fc_api.h
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 

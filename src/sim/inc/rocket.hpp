@@ -7,7 +7,7 @@
 #include "sim/inc/ins.hpp"
 #include "sim/inc/data_export.hpp"
 #include "sim/inc/ephemeris.hpp"
-#include "flight-controller/sub-o-example/inc/fc_sim_connector.hpp"
+#include "flight-controller/fc_sim_connector.hpp"
 #include <algorithm>
 #include <array>
 #include <memory>

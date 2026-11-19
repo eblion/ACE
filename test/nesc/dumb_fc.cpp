@@ -3,7 +3,7 @@
 
 // stupid flight controller.  does nothign
 
-#include "flight-controller/sub-o-example/inc/fc_api.h"
+#include "flight-controller/fc_api.h"
 
 struct fc_state {};
 static fc_state state;
