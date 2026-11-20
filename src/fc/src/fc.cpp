@@ -249,7 +249,8 @@ Quat FlightController::set_new_engine_gimbal_quat() {
     // for small angles the vector part of the error quaternion is proportional 
     // to the rotational error about body axis. n is the roll, pitch, yaw error in radians
     Vec3 n = { .x = 2 * q_err.x, .y = 2 * q_err.y, .z = 2 * q_err.z };
-
+    // demonstrator mode: use the roll-free tilt error instead
+    if (VERTICAL_HOLD_MODE) n = tilt_error_body(fc_q_rotate(cs.target_att, Vec3{0, 0, 1}));
     // calculate required torque using PD
     double wn = 5.0;
     double zeta = 0.7;
@@ -271,9 +272,17 @@ Quat FlightController::set_new_engine_gimbal_quat() {
     // moment arm from the engine gimbal point to the rocket CoM
     double moment_arm = z_cm - s_engine;
 
-    // required pitch and yaw
-    double pitch = -tau_req.x / (s.max_thrust * moment_arm);
-    double yaw = -tau_req.y / (s.max_thrust * moment_arm);
+    // thrust to use for the torque-to-angle math (demonstrator mode measures it)
+    double thrust = s.max_thrust;
+    if (VERTICAL_HOLD_MODE) thrust = std::max(cs.mass * cs.a_body.z, 1.0);
+
+    // push needed per radian of nozzle deflection, floored so we never divide by about 0 (0.01 is 1 cm in sim units)
+    double authority = thrust * std::max(moment_arm, 0.01);
+
+    // required pitch and yaw, limited to what the gimbal can physically do
+    double max_defl = s.engine_gimbal_range_deg * FC_DEG_TO_RAD;
+    double pitch = std::clamp(-tau_req.x / authority, -max_defl, max_defl);
+    double yaw = std::clamp(-tau_req.y / authority, -max_defl, max_defl);
 
     // determine nozzzle deflection from body in quaternion orientation from pitch and yaw commands
     Quat q_pitch = { cos(pitch / 2), sin(pitch / 2), 0.0, 0.0 };
@@ -370,6 +379,8 @@ void FlightController::calculate_I() {
     double m_nose = veh.nosecone_mass;
     double z_nose = base + veh.nosecone_length - veh.nosecone_com_distance;
     M_total += m_nose;
+    // save the total mass so the gimbal math can use it
+    cs.mass = M_total;
     m_CoM += m_nose * z_nose;
 
     double z_cm = m_CoM / M_total;
